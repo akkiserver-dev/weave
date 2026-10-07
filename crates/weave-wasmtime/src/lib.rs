@@ -34,6 +34,9 @@ pub struct WeaveModule {
     pub wasm: Arc<Vec<u8>>,
     pub meta: Arc<Meta>,
     pub module_hash: [u8; 32],
+    /// Compiled + ABI-validated module, shared by every instance created from
+    /// this `WeaveModule` with the same engine (compile once, instantiate many).
+    compiled: Arc<std::sync::Mutex<Option<wasmtime::Module>>>,
 }
 
 impl WeaveModule {
@@ -45,6 +48,7 @@ impl WeaveModule {
             wasm: Arc::new(out.wasm),
             meta: Arc::new(out.meta),
             module_hash,
+            compiled: Default::default(),
         })
     }
 
@@ -55,7 +59,22 @@ impl WeaveModule {
             wasm: Arc::new(wasm),
             meta: Arc::new(meta),
             module_hash,
+            compiled: Default::default(),
         }
+    }
+
+    /// Compile and ABI-validate once per engine, then hand out cheap clones.
+    pub(crate) fn compiled(&self, engine: &Engine) -> Result<wasmtime::Module> {
+        let mut slot = self.compiled.lock().unwrap();
+        if let Some(m) = slot.as_ref() {
+            if Engine::same(m.engine(), engine) {
+                return Ok(m.clone());
+            }
+        }
+        let m = wasmtime::Module::new(engine, &self.wasm[..]).context("compiling woven module")?;
+        instance::validate_module_abi(&m, &self.wasm, &self.meta).context("validating woven module ABI")?;
+        *slot = Some(m.clone());
+        Ok(m)
     }
 
     /// Compile and validate the complete woven ABI without instantiating the

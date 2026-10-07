@@ -165,9 +165,7 @@ impl WeaveInstance {
                 bail!("duplicate registered host-service name: {}", service.name());
             }
         }
-        let wmod = Module::new(engine, &module.wasm[..]).context("compiling woven module")?;
-        validate_module_abi(&wmod, &module.wasm, &module.meta)
-            .context("validating woven module ABI")?;
+        let wmod = module.compiled(engine)?;
         let mut linker: Linker<Ctx> = Linker::new(engine);
         install_poll(&mut linker)?;
         link(&mut linker)?;
