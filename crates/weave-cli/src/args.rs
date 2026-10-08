@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use wasmtime::error::{bail, format_err, Result};
 use std::collections::VecDeque;
 
 pub(crate) struct Args {
@@ -65,7 +65,7 @@ impl Args {
                 "-o" | "--out" => "o",
                 _ => token
                     .strip_prefix("--")
-                    .ok_or_else(|| anyhow::anyhow!("unknown option {token}"))?,
+                    .ok_or_else(|| format_err!("unknown option {token}"))?,
             };
             if name != "arg" && args.has(name) {
                 bail!("duplicate option --{name}");
@@ -73,7 +73,7 @@ impl Args {
             let value = if values.contains(&name) {
                 let value = argv
                     .pop_front()
-                    .ok_or_else(|| anyhow::anyhow!("missing value for --{name}"))?;
+                    .ok_or_else(|| format_err!("missing value for --{name}"))?;
                 if value.starts_with("--") || value == "-o" || value == "-h" {
                     bail!("missing value for --{name}");
                 }
@@ -158,7 +158,7 @@ impl Args {
             if let Some(value) = args.flag(name) {
                 let value: u64 = value
                     .parse()
-                    .map_err(|_| anyhow::anyhow!("--{name} must be a positive integer"))?;
+                    .map_err(|_| format_err!("--{name} must be a positive integer"))?;
                 if value == 0 {
                     bail!("--{name} must be positive");
                 }
@@ -176,7 +176,7 @@ impl Args {
             if let Some(value) = args.flag(name) {
                 value
                     .parse::<u64>()
-                    .map_err(|_| anyhow::anyhow!("--{name} must be a nonnegative integer"))?;
+                    .map_err(|_| format_err!("--{name} must be a nonnegative integer"))?;
             }
         }
         Ok(args)

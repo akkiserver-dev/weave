@@ -3,7 +3,7 @@
 //! resume it. Emitted by `weave-transform`, parsed by every host plugin.
 
 use crate::types::*;
-use anyhow::{bail, Result};
+use wasmtime::error::{bail, Result};
 
 const MAGIC: &[u8; 4] = b"WVMT";
 

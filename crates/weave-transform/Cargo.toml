@@ -5,11 +5,10 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-anyhow.workspace = true
 wasmparser.workspace = true
 wasm-encoder.workspace = true
 weave-core.workspace = true
+wasmtime.workspace = true
 
 [dev-dependencies]
 wat.workspace = true
-wasmtime.workspace = true

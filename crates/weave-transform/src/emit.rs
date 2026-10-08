@@ -7,7 +7,7 @@ use crate::codegen::{funcref_null, zero_of, Codegen};
 use crate::flatten::{Flattener, SlotKey};
 use crate::module::ParsedModule;
 use crate::{TransformOptions, TransformOutput};
-use anyhow::{anyhow, bail, Context, Result};
+use wasmtime::error::{format_err, bail, Context, Result};
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use wasm_encoder::reencode::Reencode;
@@ -37,11 +37,11 @@ pub struct Remap {
 impl Reencode for Remap {
     type Error = std::convert::Infallible;
 
-    fn function_index(&mut self, func: u32) -> u32 {
+    fn function_index(&mut self, func: u32) -> std::result::Result<u32, wasm_encoder::reencode::Error> {
         if func < self.n_imp {
-            func
+            Ok(func)
         } else {
-            func + 1
+            Ok(func + 1)
         }
     }
 }
@@ -565,7 +565,7 @@ impl Plan {
         if shadows_enabled {
             for t in &pm.tables {
                 let cap = u32::try_from(t.initial)
-                    .map_err(|_| anyhow!("table initial size too large"))?;
+                    .map_err(|_| format_err!("table initial size too large"))?;
                 off = (off + 3) & !3;
                 tshadow_init_off.push(off);
                 tshadow_init_cap.push(cap.max(1));
@@ -659,7 +659,7 @@ pub fn emit(
     for group in &pm.raw_types {
         remap
             .parse_recursive_type_group(types.ty(), group.clone())
-            .map_err(|e| anyhow!("type reencode: {e:?}"))?;
+            .map_err(|e| format_err!("type reencode: {e:?}"))?;
     }
     types.ty().function([], [ValType::I32]); // t_poll
     types.ty().function([], []); // t_void
@@ -688,7 +688,7 @@ pub fn emit(
     for imp in &pm.raw_imports {
         remap
             .parse_import(&mut imports, *imp)
-            .map_err(|e| anyhow!("import reencode: {e:?}"))?;
+            .map_err(|e| format_err!("import reencode: {e:?}"))?;
     }
     imports.import(
         names::IMPORT_MODULE,
@@ -733,7 +733,7 @@ pub fn emit(
     for t in &pm.defined_tables {
         remap
             .parse_table(&mut tables, t.clone())
-            .map_err(|e| anyhow!("table reencode: {e:?}"))?;
+            .map_err(|e| format_err!("table reencode: {e:?}"))?;
     }
     tables.table(TableType {
         element_type: RefType::FUNCREF,
@@ -748,7 +748,7 @@ pub fn emit(
     let mut memories = wasm_encoder::MemorySection::new();
     let n_imported_mems = pm.num_imported_memories as usize;
     for (i, m) in pm.memories.iter().enumerate().skip(n_imported_mems) {
-        let mut physical = remap.memory_type(*m);
+        let mut physical = remap.memory_type(*m)?;
         // The original maximum applies to guest pages, not the private suffix.
         // Guest memory.grow enforces it independently before physical growth.
         if i == 0 {
@@ -772,7 +772,7 @@ pub fn emit(
     for g in &pm.defined_globals {
         remap
             .parse_global(&mut globals, g.clone())
-            .map_err(|e| anyhow!("global reencode: {e:?}"))?;
+            .map_err(|e| format_err!("global reencode: {e:?}"))?;
     }
     let i32_mut = GlobalType {
         val_type: ValType::I32,
@@ -818,7 +818,7 @@ pub fn emit(
     let mut exports = wasm_encoder::ExportSection::new();
     for e in &pm.exports {
         match e.kind {
-            ExternalKind::Func => {
+            ExternalKind::Func | ExternalKind::FuncExact => {
                 let wrapper = plan
                     .entries
                     .iter()
@@ -870,7 +870,7 @@ pub fn emit(
     for e in &pm.elements {
         remap
             .parse_element(&mut elements, e.clone())
-            .map_err(|e| anyhow!("element reencode: {e:?}"))?;
+            .map_err(|e| format_err!("element reencode: {e:?}"))?;
     }
     let all_funcs: Vec<u32> = (0..plan.n_total_funcs).collect();
     elements.active(
@@ -944,12 +944,12 @@ pub fn emit(
         } else {
             let mut f = remap
                 .new_function_with_parsed_locals(&body)
-                .map_err(|e| anyhow!("locals reencode: {e:?}"))?;
+                .map_err(|e| format_err!("locals reencode: {e:?}"))?;
             let mut r = body.get_operators_reader()?;
             while !r.eof() {
                 let inst = remap
                     .parse_instruction(&mut r)
-                    .map_err(|e| anyhow!("instruction reencode: {e:?}"))?;
+                    .map_err(|e| format_err!("instruction reencode: {e:?}"))?;
                 f.instruction(&inst);
             }
             code.function(&f);
@@ -977,7 +977,7 @@ pub fn emit(
     for d in &pm.datas {
         remap
             .parse_data(&mut data, d.clone())
-            .map_err(|e| anyhow!("data reencode: {e:?}"))?;
+            .map_err(|e| format_err!("data reencode: {e:?}"))?;
     }
     for bytes in &shadow_data {
         data.passive(bytes.iter().copied());
@@ -1358,7 +1358,7 @@ fn gen_init(plan: &Plan, pm: &ParsedModule<'_>, remap: &mut Remap) -> Result<Fun
                     break;
                 }
                 let inst = wasm_encoder::reencode::utils::instruction(remap, op)
-                    .map_err(|e| anyhow!("offset reencode: {e:?}"))?;
+                    .map_err(|e| format_err!("offset reencode: {e:?}"))?;
                 f.instruction(&inst);
             }
             f.instruction(&I::LocalSet(base_idx));
@@ -1707,7 +1707,7 @@ fn gen_helper(
             let flag_off = plan.elem_flag_off[&e];
             let shadow_seg = *shadow_data
                 .get(&e)
-                .ok_or_else(|| anyhow!("BUG: missing shadow data segment for elem {e}"))?;
+                .ok_or_else(|| format_err!("BUG: missing shadow data segment for elem {e}"))?;
             f.instruction(&I::GlobalGet(plan.g_rbase));
             f.instruction(&I::I32Load8U(memarg(flag_off, 0)));
             f.instruction(&I::If(BlockType::Empty));

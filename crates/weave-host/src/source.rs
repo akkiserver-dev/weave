@@ -23,12 +23,13 @@
 
 use crate::pages::{PageTracker, ScanCursor};
 use crate::MemRead;
-use anyhow::{anyhow, bail, Context, Result};
+use wasmtime::error::{format_err, bail, Context, Result};
 use std::io::{BufReader, BufWriter, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+use wasmtime::Error;
 use weave_core::sha256::sha256;
 use weave_core::snapshot::StateHasher;
 use weave_core::wire::ROLE_TARGET;
@@ -103,8 +104,8 @@ impl SourceMigration {
         }
         let stream = connected.ok_or_else(|| {
             let error = last_error
-                .map(anyhow::Error::from)
-                .unwrap_or_else(|| anyhow!("no usable target address"));
+                .map(Error::from)
+                .unwrap_or_else(|| format_err!("no usable target address"));
             error.context(format!("connecting to migration target {target}"))
         })?;
         stream.set_nodelay(true).ok();

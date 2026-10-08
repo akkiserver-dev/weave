@@ -3,11 +3,9 @@
 
 use crate::emit::Plan;
 use crate::flatten::{Flattened, HelperArg, Ins, Site, SlotKey, Term};
-use anyhow::Result;
+use wasmtime::error::{Result, format_err};
 use std::borrow::Cow;
-use wasm_encoder::{
-    AbstractHeapType, BlockType, Function, HeapType, Instruction as I, MemArg, RefType, ValType,
-};
+use wasm_encoder::{AbstractHeapType, BlockType, Function, HeapType, Ieee32, Ieee64, Instruction as I, MemArg, RefType, ValType};
 use weave_core::names;
 
 pub fn funcref_null() -> I<'static> {
@@ -118,8 +116,8 @@ pub fn zero_of(key: SlotKey) -> I<'static> {
     match key {
         SlotKey::I32 => I::I32Const(0),
         SlotKey::I64 => I::I64Const(0),
-        SlotKey::F32 => I::F32Const(0.0),
-        SlotKey::F64 => I::F64Const(0.0),
+        SlotKey::F32 => I::F32Const(Ieee32::from(0.0)),
+        SlotKey::F64 => I::F64Const(Ieee64::from(0.0)),
         SlotKey::V128 => I::V128Const(0),
         SlotKey::FuncRef => funcref_null(),
     }
@@ -353,7 +351,7 @@ impl Codegen<'_> {
                     f.instruction(&I::LocalGet(fl.locals.slot_local(*s)));
                 }
                 let inst = wasm_encoder::reencode::utils::instruction(remap, op.clone())
-                    .map_err(|e| anyhow::anyhow!("reencode call: {e:?}"))?;
+                    .map_err(|e| format_err!("reencode call: {e:?}"))?;
                 f.instruction(&inst);
                 f.instruction(&I::GlobalGet(self.plan.g_state));
                 f.instruction(&I::I32Const(names::STATE_UNWIND));
@@ -451,7 +449,7 @@ impl Codegen<'_> {
                     }
                     _ => {
                         let inst = wasm_encoder::reencode::utils::instruction(remap, op)
-                            .map_err(|e| anyhow::anyhow!("reencode: {e:?}"))?;
+                            .map_err(|e| format_err!("reencode: {e:?}"))?;
                         f.instruction(&inst);
                     }
                 }

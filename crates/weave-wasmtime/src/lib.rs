@@ -22,7 +22,7 @@ pub mod serve;
 pub use instance::{CancellationHandle, Ctx, InstanceState, LinkFn, WeaveInstance, WorkResult};
 pub use poll::Poller;
 
-use anyhow::{Context, Result};
+use wasmtime::error::{Context, Result};
 use std::sync::Arc;
 use wasmtime::{Config, Engine};
 use weave_core::Meta;

@@ -3,7 +3,7 @@
 //! table), passive segments with drop-gating, SIMD (v128) live state, and
 //! multi-value functions.
 
-use anyhow::{anyhow, Result};
+use wasmtime::error::{format_err, Result};
 use wasmtime::{Caller, Config, Engine, Instance, Linker, Module, Store, Val};
 use weave_core::names;
 
@@ -87,7 +87,7 @@ fn checkpointed(
         .call(&mut store, &[], &mut [])?;
     let f = inst
         .get_func(&mut store, entry)
-        .ok_or_else(|| anyhow!("no export"))?;
+        .ok_or_else(|| format_err!("no export"))?;
     let nres = meta
         .entries
         .iter()

@@ -3,7 +3,7 @@
 
 use crate::poll::{install_poll, Poller};
 use crate::WeaveModule;
-use anyhow::{anyhow, bail, Context, Result};
+use wasmtime::error::{bail, format_err, Context, Result};
 use std::any::Any;
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -119,7 +119,7 @@ impl WeaveInstance {
         let init = inst
             .instance
             .get_func(&mut inst.store, names::F_INIT)
-            .ok_or_else(|| anyhow!("module missing {}", names::F_INIT))?;
+            .ok_or_else(|| format_err!("module missing {}", names::F_INIT))?;
         init.call(&mut inst.store, &[], &mut [])
             .context("running __weave_init")?;
         inst.store.data_mut().initializing = false;
@@ -255,7 +255,7 @@ impl WeaveInstance {
         let f = self
             .instance
             .get_func(&mut self.store, entry)
-            .ok_or_else(|| anyhow!("no export {entry}"))?;
+            .ok_or_else(|| format_err!("no export {entry}"))?;
         let params: Vec<_> = f.ty(&self.store).params().collect();
         if args.len() != params.len() {
             bail!(
@@ -283,7 +283,7 @@ impl WeaveInstance {
             .entries
             .iter()
             .find(|e| e.name == entry)
-            .ok_or_else(|| anyhow!("no weave entry {entry}"))?;
+            .ok_or_else(|| format_err!("no weave entry {entry}"))?;
         Ok(e.results.len())
     }
 
@@ -296,7 +296,7 @@ impl WeaveInstance {
         let f = self
             .instance
             .get_func(&mut self.store, entry)
-            .ok_or_else(|| anyhow!("no export {entry}"))?;
+            .ok_or_else(|| format_err!("no export {entry}"))?;
         let n = self.n_results(entry)?;
         let mut results = vec![Val::I32(0); n];
         self.state = InstanceState::Running;
@@ -320,7 +320,7 @@ impl WeaveInstance {
         let f = self
             .instance
             .get_func(&mut self.store, names::F_RESUME)
-            .ok_or_else(|| anyhow!("module missing {}", names::F_RESUME))?;
+            .ok_or_else(|| format_err!("module missing {}", names::F_RESUME))?;
         f.call(&mut self.store, &[], &mut [])
             .context("running __weave_resume")?;
         // On completion, results live in the results area; recover them.
@@ -330,7 +330,7 @@ impl WeaveInstance {
             .meta
             .entries
             .get(entry_idx)
-            .ok_or_else(|| anyhow!("bad entry index {entry_idx}"))?
+            .ok_or_else(|| format_err!("bad entry index {entry_idx}"))?
             .clone();
         let n = entry.results.len();
         let mut results = vec![Val::I32(0); n];
@@ -338,20 +338,20 @@ impl WeaveInstance {
             let rbase = self.get_global_i32(names::G_RBASE)? as u32 as usize;
             let base = rbase
                 .checked_add(self.module.meta.globals_area_size as usize)
-                .ok_or_else(|| anyhow!("results-area base overflow"))?;
+                .ok_or_else(|| format_err!("results-area base overflow"))?;
             let mem = self.primary_memory()?;
             let data = mem.data(&self.store);
             for (i, ty) in entry.results.iter().enumerate() {
                 let off = i
                     .checked_mul(16)
                     .and_then(|offset| base.checked_add(offset))
-                    .ok_or_else(|| anyhow!("result offset overflow"))?;
+                    .ok_or_else(|| format_err!("result offset overflow"))?;
                 let end = off
                     .checked_add(16)
-                    .ok_or_else(|| anyhow!("result end overflow"))?;
+                    .ok_or_else(|| format_err!("result end overflow"))?;
                 let bytes = data
                     .get(off..end)
-                    .ok_or_else(|| anyhow!("result {i} lies outside primary memory"))?;
+                    .ok_or_else(|| format_err!("result {i} lies outside primary memory"))?;
                 results[i] = read_val(*ty, bytes);
             }
         }
@@ -392,7 +392,7 @@ impl WeaveInstance {
             .memories
             .first()
             .cloned()
-            .ok_or_else(|| anyhow!("module has no exported migration memory"))?;
+            .ok_or_else(|| format_err!("module has no exported migration memory"))?;
         self.memory(&name)
     }
 
@@ -407,7 +407,7 @@ impl WeaveInstance {
         let g = self
             .instance
             .get_global(&mut self.store, name)
-            .ok_or_else(|| anyhow!("no global {name}"))?;
+            .ok_or_else(|| format_err!("no global {name}"))?;
         match g.get(&mut self.store) {
             Val::I32(v) => Ok(v),
             other => bail!("global {name} not i32: {other:?}"),
@@ -419,7 +419,7 @@ impl WeaveInstance {
         let g = self
             .instance
             .get_global(&mut self.store, name)
-            .ok_or_else(|| anyhow!("no global {name}"))?;
+            .ok_or_else(|| format_err!("no global {name}"))?;
         self.begin_staged_mutation();
         g.set(&mut self.store, Val::I32(v))
             .with_context(|| format!("set global {name}"))
@@ -625,7 +625,7 @@ impl WeaveInstance {
             .memories
             .get(mem)
             .cloned()
-            .ok_or_else(|| anyhow!("memory index {mem} out of bounds"))?;
+            .ok_or_else(|| format_err!("memory index {mem} out of bounds"))?;
         let m = self.memory(&name)?;
         let have = m.data_size(&self.store);
         if want > have {
@@ -642,7 +642,7 @@ impl WeaveInstance {
         self.require_mutable("write memory")?;
         let end = off
             .checked_add(bytes.len())
-            .ok_or_else(|| anyhow!("memory write range overflow"))?;
+            .ok_or_else(|| format_err!("memory write range overflow"))?;
         self.ensure_mem_bytes(mem, end)?;
         let name = self
             .module
@@ -650,7 +650,7 @@ impl WeaveInstance {
             .memories
             .get(mem)
             .cloned()
-            .ok_or_else(|| anyhow!("memory index {mem} out of bounds"))?;
+            .ok_or_else(|| format_err!("memory index {mem} out of bounds"))?;
         let m = self.memory(&name)?;
         self.begin_staged_mutation();
         m.data_mut(&mut self.store)[off..end].copy_from_slice(bytes);
@@ -759,11 +759,11 @@ fn validate_memory_exports(wasm: &[u8], expected_names: &[String]) -> Result<()>
     for payload in wasmparser::Parser::new(0).parse_all(wasm) {
         match payload? {
             wasmparser::Payload::ImportSection(imports) => {
-                for import in imports {
+                for import in imports.into_imports() {
                     if matches!(import?.ty, wasmparser::TypeRef::Memory(_)) {
                         memory_count = memory_count
                             .checked_add(1)
-                            .ok_or_else(|| anyhow!("module memory count overflow"))?;
+                            .ok_or_else(|| format_err!("module memory count overflow"))?;
                     }
                 }
             }
@@ -772,7 +772,7 @@ fn validate_memory_exports(wasm: &[u8], expected_names: &[String]) -> Result<()>
                     memory?;
                     memory_count = memory_count
                         .checked_add(1)
-                        .ok_or_else(|| anyhow!("module memory count overflow"))?;
+                        .ok_or_else(|| format_err!("module memory count overflow"))?;
                 }
             }
             wasmparser::Payload::ExportSection(section) => {
@@ -810,7 +810,7 @@ fn validate_memory_exports(wasm: &[u8], expected_names: &[String]) -> Result<()>
             .iter()
             .find_map(|(name, actual_index)| (name == expected).then_some(*actual_index))
             .ok_or_else(|| {
-                anyhow!("weave.meta memory {index} names {expected}, which is not a memory export")
+                format_err!("weave.meta memory {index} names {expected}, which is not a memory export")
             })?;
         let actual_index =
             usize::try_from(actual_index).context("memory export index does not fit this host")?;
@@ -893,7 +893,7 @@ fn validate_meta_layout(meta: &weave_core::Meta) -> Result<()> {
     let expected_results = result_slots
         .checked_mul(16)
         .and_then(|bytes| u32::try_from(bytes).ok())
-        .ok_or_else(|| anyhow!("weave.meta results-area size overflows u32"))?;
+        .ok_or_else(|| format_err!("weave.meta results-area size overflows u32"))?;
     if meta.results_area_size != expected_results {
         bail!(
             "weave.meta results-area size mismatch: expected {expected_results}, got {}",

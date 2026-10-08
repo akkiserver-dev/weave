@@ -2,7 +2,7 @@
 //! reason about, with borrowed views into the original binary for the parts
 //! we re-encode verbatim.
 
-use anyhow::{bail, Context, Result};
+use wasmtime::error::{bail, Context, Result};
 use wasmparser::{
     CompositeInnerType, Data, DataKind, Element, ElementItems, ElementKind, ExternalKind,
     FunctionBody, Global, OperatorsReader, Parser, Payload, RecGroup, Table, TableInit, TypeRef,
@@ -126,10 +126,10 @@ pub fn parse(wasm: &[u8]) -> Result<ParsedModule<'_>> {
                 }
             }
             Payload::ImportSection(r) => {
-                for imp in r {
+                for imp in r.into_imports() {
                     let imp = imp?;
                     match imp.ty {
-                        TypeRef::Func(ti) => m.imported_funcs.push(ImportedFunc {
+                        TypeRef::Func(ti) | TypeRef::FuncExact(ti) => m.imported_funcs.push(ImportedFunc {
                             module: imp.module.to_string(),
                             name: imp.name.to_string(),
                             type_idx: ti,
@@ -281,7 +281,7 @@ fn unsupported_feature(wasm: &[u8]) -> wasmparser::Result<Option<&'static str>> 
     for payload in Parser::new(0).parse_all(wasm) {
         match payload? {
             Payload::ImportSection(imports) => {
-                for import in imports {
+                for import in imports.into_imports() {
                     match import?.ty {
                         TypeRef::Table(table) if table.table64 => {
                             feature.get_or_insert("table64 (64-bit table indices)");

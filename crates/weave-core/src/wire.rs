@@ -22,7 +22,7 @@
 //! migrate` to ask a serving node to move its workload.
 
 use crate::types::*;
-use anyhow::{bail, Context, Result};
+use wasmtime::error::{bail, Context, Result};
 use std::io::{Read, Write};
 
 pub const PROTO_VERSION: u8 = 2;

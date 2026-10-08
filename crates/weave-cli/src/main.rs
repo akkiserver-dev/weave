@@ -14,7 +14,7 @@
 //! workload; they exist so any runner (Rust, Node, Go) exposes an identical,
 //! byte-compatible service set.
 
-use anyhow::{anyhow, bail, Context, Result};
+use wasmtime::error::{format_err, bail, Context, Result};
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 use wasmtime::Val;
@@ -51,7 +51,7 @@ impl std::fmt::Display for CliError {
     }
 }
 impl std::error::Error for CliError {}
-fn cli_error(code: &'static str, exit: i32, message: impl Into<String>) -> anyhow::Error {
+fn cli_error(code: &'static str, exit: i32, message: impl Into<String>) -> wasmtime::Error {
     CliError {
         code,
         message: message.into(),
@@ -131,10 +131,10 @@ Exit codes: 0 success/accepted; 1 legacy command failure; 2 usage;
 fn transform_opts(args: &Args) -> Result<TransformOptions> {
     let mut o = TransformOptions::default();
     if let Some(p) = args.flag("period") {
-        o.poll_period = p.parse().context("invalid --period")?;
+        o.poll_period = p.parse::<u32>().context("invalid --period")?;
     }
     if let Some(p) = args.flag("stack-pages") {
-        o.stack_pages = p.parse().context("invalid --stack-pages")?;
+        o.stack_pages = p.parse::<u32>().context("invalid --stack-pages")?;
     }
     Ok(o)
 }
@@ -166,11 +166,11 @@ fn extract_meta(wasm: &[u8]) -> Result<Meta> {
 }
 
 fn cmd_transform(args: &Args) -> Result<()> {
-    let input = args.positional.first().ok_or_else(|| anyhow!(USAGE))?;
+    let input = args.positional.first().ok_or_else(|| format_err!(USAGE))?;
     let out = args
         .flag("o")
         .or(args.flag("out"))
-        .ok_or_else(|| anyhow!("missing -o"))?;
+        .ok_or_else(|| format_err!("missing -o"))?;
     let bytes = std::fs::read(input).with_context(|| format!("reading {input}"))?;
     let bytes = if input.ends_with(".wat") {
         wat::parse_bytes(&bytes)?.into_owned()
@@ -326,7 +326,7 @@ fn parse_entry_args(meta: &Meta, entry: &str, raw: &[String]) -> Result<Vec<Val>
     let e = meta
         .entry_index(entry)
         .map(|i| &meta.entries[i])
-        .ok_or_else(|| anyhow!("module has no entry {entry}"))?;
+        .ok_or_else(|| format_err!("module has no entry {entry}"))?;
     if e.params.len() != raw.len() {
         bail!(
             "entry {entry} takes {} args, got {}",
@@ -364,10 +364,10 @@ fn print_done(vals: &[Val]) {
 }
 
 fn cmd_run(args: &Args) -> Result<()> {
-    let path = args.positional.first().ok_or_else(|| anyhow!(USAGE))?;
+    let path = args.positional.first().ok_or_else(|| format_err!(USAGE))?;
     let entry = args
         .flag("invoke")
-        .ok_or_else(|| anyhow!("missing --invoke"))?;
+        .ok_or_else(|| format_err!("missing --invoke"))?;
     let module = load_module(path, args)?;
     check_imports(&module.meta)?;
     let call_args = parse_entry_args(&module.meta, entry, &args.multi("arg"))?;
@@ -384,15 +384,15 @@ fn cmd_run(args: &Args) -> Result<()> {
 }
 
 fn cmd_checkpoint(args: &Args) -> Result<()> {
-    let path = args.positional.first().ok_or_else(|| anyhow!(USAGE))?;
+    let path = args.positional.first().ok_or_else(|| format_err!(USAGE))?;
     let entry = args
         .flag("invoke")
-        .ok_or_else(|| anyhow!("missing --invoke"))?;
+        .ok_or_else(|| format_err!("missing --invoke"))?;
     let after: u64 = args
         .flag("after-polls")
-        .ok_or_else(|| anyhow!("missing --after-polls"))?
+        .ok_or_else(|| format_err!("missing --after-polls"))?
         .parse()?;
-    let out = args.flag("o").ok_or_else(|| anyhow!("missing -o"))?;
+    let out = args.flag("o").ok_or_else(|| format_err!("missing -o"))?;
     let module = load_module(path, args)?;
     check_imports(&module.meta)?;
     let call_args = parse_entry_args(&module.meta, entry, &args.multi("arg"))?;
@@ -422,8 +422,8 @@ fn cmd_checkpoint(args: &Args) -> Result<()> {
 }
 
 fn cmd_restore(args: &Args) -> Result<()> {
-    let path = args.positional.first().ok_or_else(|| anyhow!(USAGE))?;
-    let snap_path = args.positional.get(1).ok_or_else(|| anyhow!(USAGE))?;
+    let path = args.positional.first().ok_or_else(|| format_err!(USAGE))?;
+    let snap_path = args.positional.get(1).ok_or_else(|| format_err!(USAGE))?;
     let module = load_module(path, args)?;
     check_imports(&module.meta)?;
     let snap_bytes = std::fs::read(snap_path)?;
@@ -450,14 +450,14 @@ fn cmd_restore(args: &Args) -> Result<()> {
 fn cmd_serve(args: &Args) -> Result<()> {
     let listen = args
         .flag("listen")
-        .ok_or_else(|| anyhow!("missing --listen"))?;
+        .ok_or_else(|| format_err!("missing --listen"))?;
     let engine = default_engine()?;
     let set = ServiceSet::new();
     let initial = match args.flag("module") {
         Some(path) => {
             let entry = args
                 .flag("invoke")
-                .ok_or_else(|| anyhow!("missing --invoke"))?;
+                .ok_or_else(|| format_err!("missing --invoke"))?;
             let module = load_module(path, args)?;
             check_imports(&module.meta)?;
             let call_args = parse_entry_args(&module.meta, entry, &args.multi("arg"))?;

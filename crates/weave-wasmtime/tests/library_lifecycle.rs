@@ -1,6 +1,6 @@
 //! Public-API misuse and recovery with real transformed guests, not mocked VM calls.
 
-use anyhow::{bail, Result};
+use wasmtime::error::{bail, Result};
 use std::io::{BufReader, BufWriter, Write};
 use std::net::TcpListener;
 use std::sync::atomic::{AtomicUsize, Ordering};

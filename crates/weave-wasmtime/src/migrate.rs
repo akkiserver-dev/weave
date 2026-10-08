@@ -10,7 +10,7 @@
 use crate::instance::{ServiceFactory, WeaveInstance, WorkResult};
 use crate::poll::Poller;
 use crate::WeaveModule;
-use anyhow::{anyhow, bail, Context, Result};
+use wasmtime::error::{format_err, bail, Context, Result};
 use std::any::Any;
 use std::net::{TcpListener, TcpStream};
 use wasmtime::{Engine, Val};
@@ -154,7 +154,7 @@ impl TargetHost for TargetDriver<'_, '_> {
             .factory
             .modules
             .get(hash)
-            .ok_or_else(|| anyhow!("module not present for instantiation"))?
+            .ok_or_else(|| format_err!("module not present for instantiation"))?
             .clone();
         if module.module_hash != *hash {
             bail!("cached module bytes do not match cache key");
@@ -186,7 +186,7 @@ impl TargetHost for TargetDriver<'_, '_> {
         let pages = usize::try_from(pages).context("memory page count does not fit this host")?;
         let want = pages
             .checked_mul(weave_core::WASM_PAGE_SIZE)
-            .ok_or_else(|| anyhow!("memory size overflow"))?;
+            .ok_or_else(|| format_err!("memory size overflow"))?;
         self.inst.as_mut().unwrap().ensure_mem_bytes(mem, want)
     }
 
@@ -215,7 +215,7 @@ impl TargetHost for TargetDriver<'_, '_> {
         let mems = self
             .inst
             .as_mut()
-            .ok_or_else(|| anyhow!("target session requested memories before instantiation"))?
+            .ok_or_else(|| format_err!("target session requested memories before instantiation"))?
             .mem_view()?;
         visit(&mems)
     }
@@ -241,7 +241,7 @@ pub fn accept_conn(conn: TcpStream, factory: &mut TargetFactory<'_>) -> Result<W
     run_target_session(conn, &mut driver).context("running target session")?;
     let mut inst = driver
         .inst
-        .ok_or_else(|| anyhow!("target session produced no instance"))?;
+        .ok_or_else(|| format_err!("target session produced no instance"))?;
     inst.commit_restored()?;
     Ok(inst)
 }
@@ -265,14 +265,14 @@ fn declared_initial_memory_bytes(wasm: &[u8]) -> Result<u64> {
         let page_size_log2 = memory.page_size_log2.unwrap_or(16);
         let page_size = 1u64
             .checked_shl(page_size_log2)
-            .ok_or_else(|| anyhow!("declared memory page size does not fit u64"))?;
+            .ok_or_else(|| format_err!("declared memory page size does not fit u64"))?;
         let bytes = memory
             .initial
             .checked_mul(page_size)
-            .ok_or_else(|| anyhow!("declared initial memory size overflows u64"))?;
+            .ok_or_else(|| format_err!("declared initial memory size overflows u64"))?;
         *total = total
             .checked_add(bytes)
-            .ok_or_else(|| anyhow!("aggregate declared initial memory size overflows u64"))?;
+            .ok_or_else(|| format_err!("aggregate declared initial memory size overflows u64"))?;
         Ok(())
     }
 
@@ -280,7 +280,7 @@ fn declared_initial_memory_bytes(wasm: &[u8]) -> Result<u64> {
     for payload in wasmparser::Parser::new(0).parse_all(wasm) {
         match payload? {
             wasmparser::Payload::ImportSection(imports) => {
-                for import in imports {
+                for import in imports.into_imports() {
                     if let wasmparser::TypeRef::Memory(memory) = import?.ty {
                         add_memory(&mut total, memory)?;
                     }

@@ -1,6 +1,6 @@
 //! Regression coverage for migration protocol validation and deadlines.
 
-use anyhow::Result;
+use wasmtime::error::Result;
 use std::io::{BufReader, BufWriter, Write};
 use std::net::{TcpListener, TcpStream};
 use std::time::{Duration, Instant};

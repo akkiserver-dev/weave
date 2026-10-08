@@ -4,7 +4,7 @@
 //! never evicted or re-executed in that epoch: when full it fails closed.
 //! It is not durable storage, authorization, or proof of target ownership.
 
-use anyhow::{bail, Context, Result};
+use wasmtime::error::{bail, format_err, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -241,7 +241,7 @@ impl ControlState {
         }
         let mut entropy = [0u8; 16];
         getrandom::fill(&mut entropy)
-            .map_err(|error| anyhow::anyhow!("generating node epoch: {error}"))?;
+            .map_err(|error| format_err!("generating node epoch: {error}"))?;
         let epoch = entropy.iter().map(|byte| format!("{byte:02x}")).collect();
         let state = Self::with_epoch(capabilities, lifecycle, epoch);
         // Reject oversized capability advertisements at startup, not on a query.

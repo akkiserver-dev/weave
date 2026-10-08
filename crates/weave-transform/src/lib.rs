@@ -43,7 +43,7 @@ mod flatten;
 mod memory;
 mod module;
 
-use anyhow::{Context, Result};
+use wasmtime::error::{Context, Result};
 use weave_core::Meta;
 
 #[derive(Debug, Clone)]

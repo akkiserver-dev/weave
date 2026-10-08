@@ -5,7 +5,7 @@
 //! the rollback path: if the target dies mid-migration the source rewinds
 //! locally and finishes as if nothing happened.
 
-use anyhow::Result;
+use wasmtime::error::Result;
 use std::net::TcpListener;
 use std::sync::{Arc, Mutex};
 use wasmtime::{Caller, Linker, Val};

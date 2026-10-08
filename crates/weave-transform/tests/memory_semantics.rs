@@ -2,7 +2,7 @@
 //! These tests compare host observations and traps with the original module;
 //! snapshots deliberately use every metadata-listed memory and control global.
 
-use anyhow::{anyhow, Result};
+use wasmtime::error::{format_err, Result};
 use wasmtime::{Caller, Engine, Instance, Linker, Module, Store};
 use weave_core::{names, Meta, WASM_PAGE_SIZE};
 use weave_transform::TransformOptions;
@@ -39,7 +39,7 @@ fn linker(engine: &Engine) -> Linker<HostState> {
                 let memory = caller
                     .get_export("memory")
                     .and_then(|export| export.into_memory())
-                    .ok_or_else(|| anyhow!("guest memory export missing"))?;
+                    .ok_or_else(|| format_err!("guest memory export missing"))?;
                 let mut bytes = [0; 4];
                 memory.read(&caller, address as u32 as usize, &mut bytes)?;
                 Ok(i32::from_le_bytes(bytes))
@@ -66,7 +66,7 @@ fn linker(engine: &Engine) -> Linker<HostState> {
                 let inner = caller
                     .get_export("inner")
                     .and_then(|export| export.into_func())
-                    .ok_or_else(|| anyhow!("reentrant entry missing"))?
+                    .ok_or_else(|| format_err!("reentrant entry missing"))?
                     .typed::<(), ()>(&caller)?;
                 inner.call(&mut caller, ())?;
                 Ok(())

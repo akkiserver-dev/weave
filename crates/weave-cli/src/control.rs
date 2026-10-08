@@ -1,6 +1,6 @@
 //! One deadline covers DNS, connecting, all bytes, and optional polling.
 use super::{cli_error, Args, Reported};
-use anyhow::{bail, Context, Result};
+use wasmtime::error::{bail, Context, Result};
 use std::io::{self, Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::mpsc;

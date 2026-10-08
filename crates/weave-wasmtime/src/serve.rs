@@ -7,7 +7,7 @@ use crate::instance::{LinkFn, ServiceFactory, WeaveInstance, WorkResult};
 use crate::migrate::{accept_conn, TargetFactory};
 use crate::poll::Poller;
 use crate::WeaveModule;
-use anyhow::{Context, Result};
+use wasmtime::error::{Context, Result};
 use std::io::{BufReader, BufWriter, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -373,7 +373,7 @@ pub fn serve_with_capabilities(
                                 current = Some((inst, RunPhase::Resume));
                             }
                             _ => {
-                                anyhow::bail!("workload unwound outside a migration");
+                                wasmtime::bail!("workload unwound outside a migration");
                             }
                         }
                     }
@@ -516,7 +516,7 @@ fn handle_conn(
             writer.flush()?;
             Ok(())
         }
-        other => anyhow::bail!("unexpected first frame {other:?}"),
+        other => wasmtime::bail!("unexpected first frame {other:?}"),
     }
 }
 

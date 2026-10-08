@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="EMPTY_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/crates/weave-cli/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/weave-cli/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/weave-core/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/weave-core/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/weave-host/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/weave-host/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/weave-transform/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/weave-transform/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/weave-wasmtime/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/weave-wasmtime/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/guests/mandel/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/wamr/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/wamr/tests" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/guests/mandel/target" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+      <excludeFolder url="file://$MODULE_DIR$/wamr/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>

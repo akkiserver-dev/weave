@@ -12,7 +12,7 @@
 
 use crate::sha256::Sha256;
 use crate::types::*;
-use anyhow::{bail, Context, Result};
+use wasmtime::error::{bail, format_err, Context, Result};
 
 const MAGIC: &[u8; 4] = b"WVSN";
 
@@ -151,13 +151,13 @@ impl Snapshot {
             .len()
             .checked_sub(32)
             .filter(|end| end.saturating_sub(pos) >= 12)
-            .ok_or_else(|| anyhow::anyhow!("snapshot: truncated counts or state hash"))?;
+            .ok_or_else(|| format_err!("snapshot: truncated counts or state hash"))?;
         let payload = &buf[..payload_end];
         let n_mems = snapshot_count(payload, &mut pos, 8, "memories")?;
         let mut memories = snapshot_vec(n_mems)?;
         for _ in 0..n_mems {
             let len = usize::try_from(get_u64(payload, &mut pos)?)
-                .map_err(|_| anyhow::anyhow!("snapshot: memory length does not fit host"))?;
+                .map_err(|_| format_err!("snapshot: memory length does not fit host"))?;
             memories.push(snapshot_copy(snapshot_slice(payload, &mut pos, len)?)?);
         }
         let n_globals = snapshot_count(payload, &mut pos, 4, "globals")?;
@@ -235,7 +235,7 @@ fn snapshot_slice<'a>(buf: &'a [u8], pos: &mut usize, len: usize) -> Result<&'a 
     let end = pos
         .checked_add(len)
         .filter(|end| *end <= buf.len())
-        .ok_or_else(|| anyhow::anyhow!("snapshot: truncated field"))?;
+        .ok_or_else(|| format_err!("snapshot: truncated field"))?;
     let bytes = &buf[*pos..end];
     *pos = end;
     Ok(bytes)

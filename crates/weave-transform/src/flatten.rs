@@ -10,7 +10,7 @@
 
 use crate::emit::Plan;
 use crate::module::ParsedModule;
-use anyhow::{anyhow, bail, Context, Result};
+use wasmtime::error::{format_err, bail, Context, Result};
 use std::collections::HashMap;
 use wasmparser::{BlockType, FuncValidator, FunctionBody, Operator, ValType, ValidatorResources};
 
@@ -365,14 +365,13 @@ impl<'a, 'p> Flattener<'a, 'p> {
 
         let mut ops = body.get_operators_reader()?;
         while !ops.eof() {
-            let pos = ops.original_position();
+            let pos = ops.original_position() as usize;
             let op = ops.clone().read()?;
             fl.step(&mut ops, pos, op)?;
         }
-        fl.fv.finish(ops.original_position())?;
 
         if !fl.frames.is_empty() {
-            bail!("BUG: control frames remain after function end");
+            bail!("BUG: function body ended with open control frames");
         }
 
         Ok(Flattened {
@@ -433,8 +432,8 @@ impl<'a, 'p> Flattener<'a, 'p> {
         let t = self
             .fv
             .get_operand_type(depth_from_top)
-            .ok_or_else(|| anyhow!("BUG: operand depth {depth_from_top} out of range"))?
-            .ok_or_else(|| anyhow!("BUG: polymorphic operand in reachable code"))?;
+            .ok_or_else(|| format_err!("BUG: operand depth {depth_from_top} out of range"))?
+            .ok_or_else(|| format_err!("BUG: polymorphic operand in reachable code"))?;
         Ok(SlotKey::of(t))
     }
 
@@ -467,7 +466,7 @@ impl<'a, 'p> Flattener<'a, 'p> {
     }
 
     fn validate(&mut self, ops: &mut wasmparser::OperatorsReader<'a>, pos: usize) -> Result<()> {
-        ops.visit_operator(&mut self.fv.simd_visitor(pos))?
+        ops.visit_operator(&mut self.fv.simd_visitor(pos as u64))?
             .with_context(|| format!("validating operator at {pos}"))?;
         Ok(())
     }
@@ -1096,9 +1095,9 @@ impl<'a, 'p> Flattener<'a, 'p> {
             return self.validate(ops, pos);
         }
         let (pops, pushes) = {
-            let v = self.fv.visitor(pos);
+            let v = self.fv.visitor(pos as u64);
             op.operator_arity(&v)
-                .ok_or_else(|| anyhow!("could not compute arity for {op:?}"))?
+                .ok_or_else(|| format_err!("could not compute arity for {op:?}"))?
         };
         let ins = self.top_slots(pops as usize)?;
         let base = self.height() - pops;

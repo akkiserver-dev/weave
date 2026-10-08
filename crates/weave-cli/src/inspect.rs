@@ -3,7 +3,7 @@ use super::{
     check_imports, cli_error, control, default_engine, load_module, parse_entry_args, Args,
     Reported,
 };
-use anyhow::{Context, Result};
+use wasmtime::error::{Context, Result};
 use serde_json::{json, Value};
 use wasmparser::{Payload, Validator, WasmFeatures};
 use weave_core::control::{Capabilities, ImportCapability, Limits};
@@ -240,7 +240,7 @@ pub(crate) fn run(args: &Args) -> Result<()> {
     for payload in wasmparser::Parser::new(0).parse_all(&module.wasm) {
         match payload? {
             Payload::ImportSection(section) => {
-                for import in section {
+                for import in section.into_imports() {
                     let import = import?;
                     if !matches!(import.ty, wasmparser::TypeRef::Func(_)) {
                         non_function_imports.push(json!({"module":import.module,"name":import.name,"type":format!("{:?}",import.ty)}));

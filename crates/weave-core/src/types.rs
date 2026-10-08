@@ -2,7 +2,7 @@
 //! raw little-endian bit patterns, never as host-native floats (this preserves
 //! NaN payloads and signalling bits across runtimes).
 
-use anyhow::{bail, Result};
+use wasmtime::error::{bail, format_err, Result};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ValType {
@@ -127,7 +127,7 @@ impl Val {
         let end = (*pos)
             .checked_add(17)
             .filter(|end| *end <= buf.len())
-            .ok_or_else(|| anyhow::anyhow!("truncated Val"))?;
+            .ok_or_else(|| format_err!("truncated Val"))?;
         let ty = ValType::from_code(buf[*pos])?;
         let mut bits = [0u8; 16];
         bits.copy_from_slice(&buf[*pos + 1..end]);
@@ -164,7 +164,7 @@ pub fn get_u8(buf: &[u8], pos: &mut usize) -> Result<u8> {
     let end = (*pos)
         .checked_add(1)
         .filter(|end| *end <= buf.len())
-        .ok_or_else(|| anyhow::anyhow!("truncated u8"))?;
+        .ok_or_else(|| format_err!("truncated u8"))?;
     let v = buf[*pos];
     *pos = end;
     Ok(v)
@@ -174,7 +174,7 @@ pub fn get_u16(buf: &[u8], pos: &mut usize) -> Result<u16> {
     let end = (*pos)
         .checked_add(2)
         .filter(|end| *end <= buf.len())
-        .ok_or_else(|| anyhow::anyhow!("truncated u16"))?;
+        .ok_or_else(|| format_err!("truncated u16"))?;
     let v = u16::from_le_bytes(buf[*pos..end].try_into().unwrap());
     *pos = end;
     Ok(v)
@@ -184,7 +184,7 @@ pub fn get_u32(buf: &[u8], pos: &mut usize) -> Result<u32> {
     let end = (*pos)
         .checked_add(4)
         .filter(|end| *end <= buf.len())
-        .ok_or_else(|| anyhow::anyhow!("truncated u32"))?;
+        .ok_or_else(|| format_err!("truncated u32"))?;
     let v = u32::from_le_bytes(buf[*pos..end].try_into().unwrap());
     *pos = end;
     Ok(v)
@@ -194,7 +194,7 @@ pub fn get_u64(buf: &[u8], pos: &mut usize) -> Result<u64> {
     let end = (*pos)
         .checked_add(8)
         .filter(|end| *end <= buf.len())
-        .ok_or_else(|| anyhow::anyhow!("truncated u64"))?;
+        .ok_or_else(|| format_err!("truncated u64"))?;
     let v = u64::from_le_bytes(buf[*pos..end].try_into().unwrap());
     *pos = end;
     Ok(v)
@@ -205,7 +205,7 @@ pub fn get_str(buf: &[u8], pos: &mut usize) -> Result<String> {
     let end = (*pos)
         .checked_add(n)
         .filter(|end| *end <= buf.len())
-        .ok_or_else(|| anyhow::anyhow!("truncated string"))?;
+        .ok_or_else(|| format_err!("truncated string"))?;
     let s = std::str::from_utf8(&buf[*pos..end])?.to_string();
     *pos = end;
     Ok(s)
@@ -216,7 +216,7 @@ pub fn get_bytes(buf: &[u8], pos: &mut usize) -> Result<Vec<u8>> {
     let end = (*pos)
         .checked_add(n)
         .filter(|end| *end <= buf.len())
-        .ok_or_else(|| anyhow::anyhow!("truncated bytes"))?;
+        .ok_or_else(|| format_err!("truncated bytes"))?;
     let b = buf[*pos..end].to_vec();
     *pos = end;
     Ok(b)

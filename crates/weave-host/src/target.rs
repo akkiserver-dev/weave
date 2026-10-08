@@ -7,7 +7,7 @@
 //! place and only the final delta rides through the pause window.
 
 use crate::MemRead;
-use anyhow::{bail, Context, Result};
+use wasmtime::error::{bail, format_err, Context, Result};
 use std::collections::HashSet;
 use std::io::{BufReader, BufWriter, Write};
 use std::net::TcpStream;
@@ -201,7 +201,7 @@ pub fn run_target_session(conn: TcpStream, host: &mut dyn TargetHost) -> Result<
                             let end = off
                                 .checked_add(chunk.len())
                                 .filter(|end| *end <= bytes.len())
-                                .ok_or_else(|| anyhow::anyhow!("module chunk out of bounds"))?;
+                                .ok_or_else(|| format_err!("module chunk out of bounds"))?;
                             bytes[off..end].copy_from_slice(&chunk);
                             got = end;
                         }
@@ -315,16 +315,16 @@ pub fn run_target_session(conn: TcpStream, host: &mut dyn TargetHost) -> Result<
                     .as_ref()
                     .and_then(|pages| pages.get(mem))
                     .copied()
-                    .ok_or_else(|| anyhow::anyhow!("PAGE before a matching MEM_LAYOUT"))?;
+                    .ok_or_else(|| format_err!("PAGE before a matching MEM_LAYOUT"))?;
                 let off_u64 = page_no
                     .checked_mul(WPAGE_SIZE as u64)
-                    .ok_or_else(|| anyhow::anyhow!("page offset overflow"))?;
+                    .ok_or_else(|| format_err!("page offset overflow"))?;
                 let end_u64 = off_u64
                     .checked_add(bytes.len() as u64)
-                    .ok_or_else(|| anyhow::anyhow!("page end overflow"))?;
+                    .ok_or_else(|| format_err!("page end overflow"))?;
                 let announced_bytes = announced
                     .checked_mul(WASM_PAGE_SIZE as u64)
-                    .ok_or_else(|| anyhow::anyhow!("announced memory size overflow"))?;
+                    .ok_or_else(|| format_err!("announced memory size overflow"))?;
                 if end_u64 > announced_bytes {
                     return reject(&mut w, 5, "PAGE exceeds announced memory layout");
                 }
@@ -335,7 +335,7 @@ pub fn run_target_session(conn: TcpStream, host: &mut dyn TargetHost) -> Result<
                 host.write_mem(mem, off, &bytes)?;
                 round_pages = round_pages
                     .checked_add(1)
-                    .ok_or_else(|| anyhow::anyhow!("round page count overflow"))?;
+                    .ok_or_else(|| format_err!("round page count overflow"))?;
             }
             Frame::RoundEnd { round, pages_sent } => {
                 if phase != ReceivePhase::Precopy {
@@ -354,7 +354,7 @@ pub fn run_target_session(conn: TcpStream, host: &mut dyn TargetHost) -> Result<
                 w.flush()?;
                 expected_round = expected_round
                     .checked_add(1)
-                    .ok_or_else(|| anyhow::anyhow!("round number overflow"))?;
+                    .ok_or_else(|| format_err!("round number overflow"))?;
                 round_pages = 0;
                 pages_seen.clear();
             }

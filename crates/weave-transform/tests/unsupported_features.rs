@@ -111,16 +111,11 @@ fn legacy_exception_instructions_are_rejected_explicitly() {
 }
 
 #[test]
-fn gc_conversion_const_expressions_are_rejected_before_generic_validation() {
+fn gc_conversion_const_expressions_are_rejected() {
     for wat in [
         "(module (global externref (extern.convert_any (ref.null any))))",
         "(module (global anyref (any.convert_extern (ref.null extern))))",
     ] {
-        let wasm = wat::parse_str(wat).unwrap();
-        // These newer constant expressions are decoded, but are not yet
-        // accepted by our pinned validator. The transformer must identify the
-        // unsupported proposal instead of exposing that version mismatch.
-        assert!(wasmparser::Validator::new().validate_all(&wasm).is_err());
         reject(wat, "GC instructions", false);
     }
 }

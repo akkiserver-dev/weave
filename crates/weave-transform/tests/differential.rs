@@ -4,7 +4,7 @@
 //! round-trips driven directly through the guest ABI, including restoring
 //! into a completely fresh instance.
 
-use anyhow::{anyhow, Result};
+use wasmtime::error::{format_err, Result};
 use wasmtime::{Caller, Config, Engine, Extern, Instance, Linker, Module, Store, Val};
 use weave_core::names;
 
@@ -80,7 +80,7 @@ fn run_module(
     }
     let f = instance
         .get_func(&mut store, entry)
-        .ok_or_else(|| anyhow!("no export {entry}"))?;
+        .ok_or_else(|| format_err!("no export {entry}"))?;
     let mut results = vec![Val::I32(0); n_results];
     f.call(&mut store, args, &mut results)?;
     Ok((results, store.data().emitted.clone()))

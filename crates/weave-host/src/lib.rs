@@ -18,7 +18,7 @@ pub mod pages;
 pub mod source;
 pub mod target;
 
-use anyhow::Result;
+use wasmtime::error::Result;
 
 /// A stateful host service. Implementations also register concrete host
 /// functions with their engine (that part is engine-specific); Weave moves

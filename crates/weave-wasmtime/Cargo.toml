@@ -5,7 +5,6 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-anyhow.workspace = true
 wasmtime.workspace = true
 wasmparser.workspace = true
 weave-core.workspace = true

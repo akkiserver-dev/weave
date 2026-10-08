@@ -57,7 +57,7 @@ impl MemRead for SliceMem<'_> {
 }
 
 /// Install `weave.poll` into a linker.
-pub fn install_poll(linker: &mut Linker<Ctx>) -> anyhow::Result<()> {
+pub fn install_poll(linker: &mut Linker<Ctx>) -> wasmtime::error::Result<()> {
     linker.func_wrap("weave", "poll", |mut caller: Caller<'_, Ctx>| -> i32 {
         // Init has no suspended entry that resume could reconstruct, even if
         // an original start import installs an unwind poller through Ctx.
