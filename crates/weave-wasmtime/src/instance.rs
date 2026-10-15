@@ -59,6 +59,16 @@ pub fn request_unwind(caller: &mut Caller<'_, Ctx>) -> Result<()> {
 }
 
 impl Ctx {
+    /// Same as [`WeaveInstance::set_memory_limit`], usable from inside a host
+    /// function (through `Caller::data_mut`). Takes effect on the next grow.
+    pub fn set_memory_limit(&mut self, bytes: Option<usize>) {
+        let mut b = StoreLimitsBuilder::new();
+        if let Some(n) = bytes {
+            b = b.memory_size(n);
+        }
+        self.limits = b.build();
+    }
+
     pub fn service_state<T: 'static>(&mut self, idx: usize) -> &mut T {
         self.service_any[idx]
             .downcast_mut::<T>()
@@ -257,11 +267,7 @@ impl WeaveInstance {
     /// lives in the same memory. Set it after a restore: restoring a snapshot
     /// may itself need to grow memory to the saved size.
     pub fn set_memory_limit(&mut self, bytes: Option<usize>) {
-        let mut b = StoreLimitsBuilder::new();
-        if let Some(n) = bytes {
-            b = b.memory_size(n);
-        }
-        self.store.data_mut().limits = b.build();
+        self.store.data_mut().set_memory_limit(bytes);
     }
 
     pub fn state(&self) -> InstanceState {
