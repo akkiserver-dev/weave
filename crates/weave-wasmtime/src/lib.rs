@@ -19,7 +19,9 @@ pub mod migrate;
 pub mod poll;
 pub mod serve;
 
-pub use instance::{CancellationHandle, Ctx, InstanceState, LinkFn, WeaveInstance, WorkResult};
+pub use instance::{
+    request_unwind, CancellationHandle, Ctx, InstanceState, LinkFn, WeaveInstance, WorkResult,
+};
 pub use poll::Poller;
 
 use wasmtime::error::{Context, Result};

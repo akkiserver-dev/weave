@@ -8,7 +8,10 @@ use std::any::Any;
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use wasmtime::{Engine, Extern, Instance, Linker, Memory, Module, Store, Val};
+use wasmtime::{
+    Caller, Engine, Extern, Instance, Linker, Memory, Module, Store, StoreLimits,
+    StoreLimitsBuilder, Val,
+};
 use weave_core::names;
 use weave_core::snapshot::Snapshot;
 use weave_host::{HostService, MemRead};
@@ -30,6 +33,29 @@ pub struct Ctx {
     pub(crate) retired: Arc<AtomicBool>,
     pub(crate) cancellation: CancellationHandle,
     pub(crate) initializing: bool,
+    /// Resource limits enforced by the store (see `set_memory_limit`).
+    pub(crate) limits: StoreLimits,
+}
+
+/// Stop the guest from inside a *yielding import* (one listed in
+/// `TransformOptions::yielding_imports`). After the host function returns,
+/// the call site unwinds the whole stack and the entry call returns
+/// [`WorkResult::Unwound`]. When the instance is resumed, the same import is
+/// called again with the same arguments; the host then returns the real
+/// result (and must not request another unwind for that call).
+///
+/// Calling this from a non-yielding import is an error in the embedding: the
+/// call site has no unwind check, so the guest would continue in a corrupt
+/// state. Requests made while the module's start function runs are refused.
+pub fn request_unwind(caller: &mut Caller<'_, Ctx>) -> Result<()> {
+    if caller.data().initializing {
+        bail!("cannot unwind during module initialization");
+    }
+    let state = caller
+        .get_export(names::G_STATE)
+        .and_then(|e| e.into_global())
+        .ok_or_else(|| format_err!("module does not export {}", names::G_STATE))?;
+    state.set(&mut *caller, Val::I32(names::STATE_UNWIND))
 }
 
 impl Ctx {
@@ -182,8 +208,10 @@ impl WeaveInstance {
             retired: Arc::new(AtomicBool::new(false)),
             cancellation: CancellationHandle::default(),
             initializing: true,
+            limits: StoreLimits::default(),
         };
         let mut store = Store::new(engine, ctx);
+        store.limiter(|ctx| &mut ctx.limits);
         let instance = linker
             .instantiate(&mut store, &wmod)
             .context("instantiating woven module")?;
@@ -221,6 +249,19 @@ impl WeaveInstance {
             mig.attach_retirement_flag(self.store.data().retired.clone());
         }
         self.store.data_mut().poller = p;
+    }
+
+    /// Cap how far each linear memory of this instance may grow, in bytes
+    /// (`None` = unlimited). A guest `memory.grow` beyond the cap returns -1
+    /// instead of trapping. The cap covers Weave's shadow stack too, which
+    /// lives in the same memory. Set it after a restore: restoring a snapshot
+    /// may itself need to grow memory to the saved size.
+    pub fn set_memory_limit(&mut self, bytes: Option<usize>) {
+        let mut b = StoreLimitsBuilder::new();
+        if let Some(n) = bytes {
+            b = b.memory_size(n);
+        }
+        self.store.data_mut().limits = b.build();
     }
 
     pub fn state(&self) -> InstanceState {

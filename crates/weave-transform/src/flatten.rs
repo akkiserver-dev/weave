@@ -1129,7 +1129,11 @@ impl<'a, 'p> Flattener<'a, 'p> {
             true
         } else {
             let n_imp = self.pm.num_imported_funcs();
-            callee >= n_imp && self.plan.instrumented[(callee - n_imp) as usize]
+            if callee < n_imp {
+                self.plan.yielding[callee as usize]
+            } else {
+                self.plan.instrumented[(callee - n_imp) as usize]
+            }
         };
         if can_unwind && self.instrumented {
             let site_block = self.split();

@@ -54,6 +54,15 @@ pub struct TransformOptions {
     pub poll_period: u32,
     /// Initial shadow-stack allocation in 64 KiB wasm pages.
     pub stack_pages: u32,
+    /// Imported functions, as `(module, name)`, that may suspend the guest.
+    ///
+    /// A yielding import stops the guest from inside the call: the host sets
+    /// `__weave_state` to UNWIND before returning (see
+    /// `weave_wasmtime::request_unwind`), and the call site unwinds like a
+    /// callee that unwound. On resume the call instruction is executed again
+    /// with the same arguments, and the host returns the real result.
+    /// Callers of a yielding import are instrumented like callers of a loop.
+    pub yielding_imports: Vec<(String, String)>,
 }
 
 impl Default for TransformOptions {
@@ -61,6 +70,7 @@ impl Default for TransformOptions {
         TransformOptions {
             poll_period: 512,
             stack_pages: 16,
+            yielding_imports: Vec::new(),
         }
     }
 }

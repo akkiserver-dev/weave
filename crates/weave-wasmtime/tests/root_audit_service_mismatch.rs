@@ -91,6 +91,7 @@ fn full_migration_rejects_different_service_sets_and_rolls_back() {
         &TransformOptions {
             poll_period: 1,
             stack_pages: 1,
+            ..Default::default()
         },
     )
     .unwrap();
@@ -161,6 +162,7 @@ fn target_rejects_wrong_control_global_list() {
         &TransformOptions {
             poll_period: 1,
             stack_pages: 1,
+            ..Default::default()
         },
     )
     .unwrap();
@@ -204,6 +206,7 @@ fn target_does_not_restore_services_before_hash_verification() {
         &TransformOptions {
             poll_period: 1,
             stack_pages: 1,
+            ..Default::default()
         },
     )
     .unwrap();

@@ -84,6 +84,8 @@ pub enum HelperKind {
 }
 
 pub struct Plan {
+    /// Per imported function: may it suspend the guest (yielding import)?
+    pub yielding: Vec<bool>,
     pub poll_period: u32,
     pub stack_pages: u32,
     pub n_imp: u32,
@@ -360,10 +362,21 @@ impl Plan {
         // function on a call-graph cycle, so pure recursion is checkpointable
         // through function-entry polls).
         let recursive = find_recursive(&scans, n_imp);
+        let yielding: Vec<bool> = pm
+            .imported_funcs
+            .iter()
+            .map(|f| {
+                opts.yielding_imports
+                    .iter()
+                    .any(|(m, n)| *m == f.module && *n == f.name)
+            })
+            .collect();
+        let calls_yielding =
+            |s: &Prescan| s.callees.iter().any(|c| *c < n_imp && yielding[*c as usize]);
         let mut instrumented: Vec<bool> = scans
             .iter()
             .enumerate()
-            .map(|(i, s)| s.has_loop || s.has_indirect || recursive[i])
+            .map(|(i, s)| s.has_loop || s.has_indirect || recursive[i] || calls_yielding(s))
             .collect();
         loop {
             let mut changed = false;
@@ -608,6 +621,7 @@ impl Plan {
             g_tshadow_cap,
             shadow_globals,
             instrumented,
+            yielding,
             flattened,
             shadows_enabled,
             data_flag_off,

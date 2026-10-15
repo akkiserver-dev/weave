@@ -34,6 +34,7 @@ fn module(wat: &str) -> WeaveModule {
         &weave_transform::TransformOptions {
             poll_period: 1,
             stack_pages: 1,
+            ..Default::default()
         },
     )
     .unwrap()
