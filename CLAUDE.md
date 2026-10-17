@@ -23,3 +23,11 @@
 ## Branches
 - New features: `feature/<name>`
 - Fixes: `fix/<name>`
+
+## Repository and licensing
+- Treat the repository as a work in progress unless the user explicitly says otherwise.
+- Do not make licensing, attribution, copyright, or repository publication changes without asking the user first.
+- When working on a fork, preserve existing upstream copyright notices, license headers, and attribution notices.
+- Before distributing or preparing a release of a fork, audit the applicable license requirements and report any unresolved issues.
+- Do not assume that a public repository is ready for release.
+- Distinguish between changes to source code, generated artifacts, vendored dependencies, and repository configuration when reviewing Git diffs.
