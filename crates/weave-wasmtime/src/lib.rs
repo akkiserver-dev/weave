@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! weave-wasmtime: the Weave host plugin for the wasmtime engine.
 //!
 //! This is a concrete implementation of the engine-agnostic pieces in

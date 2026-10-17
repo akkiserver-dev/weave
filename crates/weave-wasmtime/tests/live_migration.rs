@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! End-to-end live migration between two wasmtime instances over real TCP:
 //! source runs a workload, pre-copy streams memory while it executes, the
 //! guest unwinds, the final delta moves, and the target resumes seamlessly.

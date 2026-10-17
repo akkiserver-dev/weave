@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! Whole-module planning and assembly: index-space layout, the weave region
 //! layout, generated runtime functions (shadow-stack management, globals
 //! save/load, table rehydration, init/resume, entry wrappers, table helpers),

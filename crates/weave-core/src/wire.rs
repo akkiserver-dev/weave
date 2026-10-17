@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! Peer-to-peer migration wire protocol.
 //!
 //! A migration is a single TCP connection dialed by the *source* directly to

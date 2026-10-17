@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! Static preflight only: no linker, instantiation, initialization, or guest call.
 use super::{
     check_imports, cli_error, control, default_engine, load_module, parse_entry_args, Args,

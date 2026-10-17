@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! Guest-visible memory behavior must survive instrumentation and checkpoints.
 //! These tests compare host observations and traps with the original module;
 //! snapshots deliberately use every metadata-listed memory and control global.

@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! Parsed model of the input module: everything the instrumenter needs to
 //! reason about, with borrowed views into the original binary for the parts
 //! we re-encode verbatim.

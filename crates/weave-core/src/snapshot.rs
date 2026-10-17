@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! The portable snapshot container. A snapshot is the complete migratable
 //! state of a running instance:
 //!   - full contents of every linear memory (the guest's live shadow stack,

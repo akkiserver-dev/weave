@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! Regression coverage for migration protocol validation and deadlines.
 
 use wasmtime::error::Result;

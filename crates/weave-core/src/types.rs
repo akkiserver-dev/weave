@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! Core value model. Weave moves *bit-exact* state, so values are carried as
 //! raw little-endian bit patterns, never as host-native floats (this preserves
 //! NaN payloads and signalling bits across runtimes).

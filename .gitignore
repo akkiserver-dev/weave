@@ -3,3 +3,7 @@
 WEBRTC_OVERLAY.md
 RELEASE_POST.md
 
+
+# Build output and IDE settings (not part of the distributed source)
+target/
+.idea/

@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! Emission of a flattened function into the `loop`+`br_table` dispatch
 //! structure, including the rewind prologue and the spill (unwind) sequences.
 

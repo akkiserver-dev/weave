@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! One deadline covers DNS, connecting, all bytes, and optional polling.
 use super::{cli_error, Args, Reported};
 use wasmtime::error::{bail, Context, Result};

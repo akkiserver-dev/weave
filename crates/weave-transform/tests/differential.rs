@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! Differential tests: a transformed module with no checkpoint ever requested
 //! must be observationally identical to the original — same results, same
 //! emitted host-call sequences, same traps. Then: full checkpoint/restore

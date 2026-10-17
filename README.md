@@ -1,6 +1,6 @@
 # Weave
 
-> AI Disclaimer: This project is a fork. The original project was not written with AI. Some edits made after forking were vibe-coded or written with AI assistance.
+> AI Disclaimer: This project is a fork of [dphilla/weave](https://github.com/dphilla/weave). According to its author, the original was developed over several years before AI tools and with AI assistance starting in 2026, and is not vibe-coded. Some edits made in this fork after forking were vibe-coded or written with AI assistance.
 
 **Live migration for portable WebAssembly workloads, across machines and
 across runtimes.** Weave moves a *currently executing* woven module — its

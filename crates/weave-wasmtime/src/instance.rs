@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! `WeaveInstance`: a running (or restorable) instance of a woven module on
 //! wasmtime, with checkpoint/restore and the host-side of live migration.
 

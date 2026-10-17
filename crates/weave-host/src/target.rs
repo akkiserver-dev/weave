@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! Target side of a live migration: accept a workload streamed by a source
 //! peer, verify it bit-for-bit, and hand back a ready-to-resume instance.
 //!

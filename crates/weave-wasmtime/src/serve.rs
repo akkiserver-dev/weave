@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! A Weave *node*: one process that runs a workload, accepts control
 //! commands, migrates its workload out on request, and receives workloads
 //! migrated in — the symmetric peer-to-peer unit. A node that received a

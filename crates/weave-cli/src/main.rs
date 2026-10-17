@@ -1,3 +1,5 @@
+// This file was modified in akkiserver-dev/weave, a fork of
+// https://github.com/dphilla/weave (Apache-2.0). See the Git history for changes.
 //! The `weave` command-line tool.
 //!
 //!   weave transform IN.wasm -o OUT.wasm [--period N] [--stack-pages N]
